@@ -23,7 +23,7 @@ class FoodCalcBot:
         markup = types.InlineKeyboardMarkup()
         start_calc_food = types.InlineKeyboardButton('Начать расчет', callback_data='calc_ingredients_weight')
         markup.add(start_calc_food)
-        self.bot.send_message(message.from_user.id, "Приветики! 👋 Я твой бот-помощник по расчету еды!", reply_markup=markup)
+        self.bot.send_message(message.from_user.id, "Приветики, Пупсик 👋 Я твой бот-помощник по расчету еды!", reply_markup=markup)
 
     def calc_ingredients_weight_command(self, message):
         calculator = IngredientsWeightCalculator(self.bot)
@@ -44,7 +44,7 @@ class FoodCalcBot:
         if context:
             context.next(message)
         else:
-            self.bot.send_message(message.chat.id, 'Не разобрал')
+            self.bot.send_message(message.chat.id, 'Я не понял, выбери команду из списка')
 
     def _add_command_handler(self, handler,
                              commands: Optional[list[str]] = None,
