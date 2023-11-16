@@ -27,15 +27,16 @@ class BotCommand(enum.Enum):
 
 
 class BaseBot:
+    debug = False
     context_data: dict[int, BaseCommandHandler]
 
     def __init__(self):
         self.bot = TeleBot(os.getenv('BOT_TOKEN'), exception_handler=CustomExceptionHandler())
         self.context_data = {}
-        self._add_command_handler(self.start_command, [BotCommand.START.value])
+        self.add_command_handler(self.start_command, [BotCommand.START.value])
         self.add_command_handlers()
-        self._add_callback_query_handler(lambda call: True, self._callback_query)
-        self._add_message_handler(self._get_text_messages, content_types=['text'])
+        self.add_callback_query_handler(lambda call: True, self._callback_query)
+        self.add_message_handler(self._text_messages_handler, content_types=['text'])
 
     def start(self):
         self.bot.polling(none_stop=True, interval=0)
@@ -57,9 +58,10 @@ class BaseBot:
             self.bot.delete_message(call.message.chat.id, call.message.id)
             command_handler(call.message)
 
-    def _get_text_messages(self, message):
-        message_text = message.text
-        print('message:', message_text)
+    def _text_messages_handler(self, message):
+        if self.debug:
+            print('message:', message.text)
+
         context = self.context_data.get(message.chat.id)
 
         if not context or not context.step:
@@ -74,13 +76,13 @@ class BaseBot:
                 return
             print(e)
 
-    def _add_command_handler(self, handler,
-                             commands: Optional[list[str]] = None,
-                             regexp: Optional[str] = None,
-                             func: Optional[Callable] = None,
-                             content_types: Optional[list[str]] = None,
-                             chat_types: Optional[list[str]] = None,
-                             **kwargs):
+    def add_command_handler(self, handler,
+                            commands: Optional[list[str]] = None,
+                            regexp: Optional[str] = None,
+                            func: Optional[Callable] = None,
+                            content_types: Optional[list[str]] = None,
+                            chat_types: Optional[list[str]] = None,
+                            **kwargs):
 
         if content_types is None:
             content_types = ["text"]
@@ -109,12 +111,12 @@ class BaseBot:
                                                     **kwargs)
         self.bot.add_message_handler(handler_dict)
 
-    def _add_callback_query_handler(self, func, handler, **kwargs):
+    def add_callback_query_handler(self, func, handler, **kwargs):
         # noinspection PyProtectedMember
         handler_dict = self.bot._build_handler_dict(handler, func=func, **kwargs)
         self.bot.callback_query_handlers.append(handler_dict)
 
-    def _add_message_handler(
+    def add_message_handler(
                     self,
                     handler: Callable,
                     commands: Optional[list[str]] = None,

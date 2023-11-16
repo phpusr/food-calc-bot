@@ -14,8 +14,8 @@ class FoodCalcBotCommand(enum.Enum):
 class FoodCalcBot(BaseBot):
 
     def add_command_handlers(self):
-        self._add_command_handler(self.calc_ingredients_weight_command,
-                                  [FoodCalcBotCommand.CALC_INGREDIENTS_WEIGHT.value])
+        self.add_command_handler(self.calc_ingredients_weight_command,
+                                 [FoodCalcBotCommand.CALC_INGREDIENTS_WEIGHT.value])
 
     def print_help(self, message):
         markup = types.InlineKeyboardMarkup()
