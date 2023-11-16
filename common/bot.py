@@ -4,7 +4,7 @@ import os
 from typing import Optional, Callable
 
 from telebot import TeleBot, ExceptionHandler
-from telebot.types import InlineKeyboardButton
+from telebot.types import InlineKeyboardButton, BotCommand
 
 from common.command_handler import BaseCommandHandler
 
@@ -22,19 +22,27 @@ class CustomExceptionHandler(ExceptionHandler):
 
 
 @enum.unique
-class BotCommand(enum.Enum):
+class BotCommandType(enum.Enum):
     START = 'start'
 
 
 class BaseBot:
     debug = False
     context_data: dict[int, BaseCommandHandler]
+    commands: list[BotCommand]
 
     def __init__(self):
         self.bot = TeleBot(os.getenv('BOT_TOKEN'), exception_handler=CustomExceptionHandler())
         self.context_data = {}
-        self.add_command_handler(self.start_command, [BotCommand.START.value])
+        self.commands = []
+
+        self.add_command_handler(
+            handler=self.start_command,
+            commands=[BotCommandType.START.value],
+            description='Начать пользоваться ботом'
+        )
         self.add_command_handlers()
+        self.bot.set_my_commands(self.commands)
         self.add_callback_query_handler(lambda call: True, self._callback_query)
         self.add_message_handler(self._text_messages_handler, content_types=['text'])
 
@@ -77,11 +85,12 @@ class BaseBot:
             print(e)
 
     def add_command_handler(self, handler,
-                            commands: Optional[list[str]] = None,
-                            regexp: Optional[str] = None,
-                            func: Optional[Callable] = None,
-                            content_types: Optional[list[str]] = None,
-                            chat_types: Optional[list[str]] = None,
+                            commands: list[str] = None,
+                            regexp: str = None,
+                            func: Callable = None,
+                            content_types: list[str] = None,
+                            chat_types: list[str] = None,
+                            description: str = '',
                             **kwargs):
 
         if content_types is None:
@@ -100,6 +109,9 @@ class BaseBot:
         if isinstance(content_types, str):
             print("message_handler: 'content_types' filter should be List of strings (content types), not string.")
             content_types = [content_types]
+
+        for command in commands:
+            self.commands.append(BotCommand(command, description))
 
         # noinspection PyProtectedMember
         handler_dict = self.bot._build_handler_dict(handler,
