@@ -13,7 +13,6 @@ class FoodCalcBotCommand(enum.Enum):
 
 
 class FoodCalcBot(BaseBot):
-    change_name = False
     name = messages.bot_name
     description = messages.bot_description
 

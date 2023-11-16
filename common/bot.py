@@ -37,6 +37,7 @@ class BaseBot:
     allowed_users: list[str]
 
     def __init__(self):
+        self.change_name = os.getenv('BOT_CHANGE_NAME') == 'TRUE'
         self.bot = TeleBot(os.getenv('BOT_TOKEN'), exception_handler=CustomExceptionHandler())
         self.context_data = {}
         self.commands = []
