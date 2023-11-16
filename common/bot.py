@@ -1,9 +1,18 @@
+import enum
+import json
 import os
 from typing import Optional, Callable
 
 from telebot import TeleBot, ExceptionHandler
+from telebot.types import InlineKeyboardButton
 
 from common.command_handler import BaseCommandHandler
+
+
+class CommandInlineKeyboardMarkup(InlineKeyboardButton):
+    def __init__(self, title: str, command_name: str):
+        callback_data = json.dumps({'command': command_name})
+        super().__init__('Начать расчет', callback_data=callback_data)
 
 
 class CustomExceptionHandler(ExceptionHandler):
@@ -12,29 +21,41 @@ class CustomExceptionHandler(ExceptionHandler):
         return True
 
 
+@enum.unique
+class BotCommand(enum.Enum):
+    START = 'start'
+
+
 class BaseBot:
     context_data: dict[int, BaseCommandHandler]
 
     def __init__(self):
         self.bot = TeleBot(os.getenv('BOT_TOKEN'), exception_handler=CustomExceptionHandler())
         self.context_data = {}
-        self._add_command_handlers()
-        self._add_command_handler(self._start_command, ['start'])
+        self._add_command_handler(self.start_command, [BotCommand.START.value])
+        self.add_command_handlers()
         self._add_callback_query_handler(lambda call: True, self._callback_query)
         self._add_message_handler(self._get_text_messages, content_types=['text'])
 
     def start(self):
         self.bot.polling(none_stop=True, interval=0)
 
-    def _add_command_handlers(self):
+    def add_command_handlers(self):
         pass
 
-    def _start_command(self, message):
+    def start_command(self, message):
+        self.print_help(message)
+
+    def print_help(self, message):
         self.bot.send_message(message.from_user.id, 'Implement me')
 
     def _callback_query(self, call):
-        command = call.data
-        print(command)
+        data = json.loads(call.data)
+        command_name = data.get('command')
+        if command_name:
+            command_handler = getattr(self, f'{command_name}_command')
+            self.bot.delete_message(call.message.chat.id, call.message.id)
+            command_handler(call.message)
 
     def _get_text_messages(self, message):
         message_text = message.text
@@ -42,7 +63,7 @@ class BaseBot:
         context = self.context_data.get(message.chat.id)
 
         if not context or not context.step:
-            self.bot.send_message(message.chat.id, 'Я не понял, выбери команду из списка')
+            self.print_help(message)
             return
 
         try:

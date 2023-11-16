@@ -1,17 +1,25 @@
+import enum
+
 from telebot import types
 
 from commands.ingredients_weight_calculator import IngredientsWeightCalculator
-from common.bot import BaseBot
+from common.bot import BaseBot, CommandInlineKeyboardMarkup
+
+
+@enum.unique
+class FoodCalcBotCommand(enum.Enum):
+    CALC_INGREDIENTS_WEIGHT = 'calc_ingredients_weight'
 
 
 class FoodCalcBot(BaseBot):
 
-    def _add_command_handlers(self):
-        self._add_command_handler(self.calc_ingredients_weight_command, ['calc_ingredients_weight'])
+    def add_command_handlers(self):
+        self._add_command_handler(self.calc_ingredients_weight_command,
+                                  [FoodCalcBotCommand.CALC_INGREDIENTS_WEIGHT.value])
 
-    def _start_command(self, message):
+    def print_help(self, message):
         markup = types.InlineKeyboardMarkup()
-        start_calc_food = types.InlineKeyboardButton('Начать расчет', callback_data='calc_ingredients_weight')
+        start_calc_food = CommandInlineKeyboardMarkup('Начать расчет', FoodCalcBotCommand.CALC_INGREDIENTS_WEIGHT.value)
         markup.add(start_calc_food)
         self.bot.send_message(message.from_user.id, "Приветики, Пупсик 👋 Я твой бот-помощник по расчету еды!", reply_markup=markup)
 
@@ -20,7 +28,3 @@ class FoodCalcBot(BaseBot):
         self.context_data[message.chat.id] = calculator
         calculator.next(message)
 
-    def _callback_query(self, call):
-        if call.data == 'calc_ingredients_weight':
-            self.bot.delete_message(call.message.chat.id, call.message.id)
-            self.calc_ingredients_weight_command(call.message)

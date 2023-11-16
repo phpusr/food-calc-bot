@@ -1,5 +1,5 @@
+import enum
 from dataclasses import dataclass
-from enum import Enum
 
 from common.command_handler import BaseCommandHandler
 
@@ -17,7 +17,8 @@ class Ingredient:
         return f'{self.name} {self.weight}'
 
 
-class IWCStep(Enum):
+@enum.unique
+class IWCStep(enum.Enum):
     START = 1
     CLIENT_FOOD_WEIGHT = 2
     REST_FOOD_WEIGHT = 3
