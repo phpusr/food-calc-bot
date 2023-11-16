@@ -9,10 +9,12 @@ class Ingredient:
     name: str
     weight: float
 
-    def __init__(self, ingredient_str: str):
-        pair = ingredient_str.split(' ')
-        self.name = pair[0].lower().capitalize()
-        self.weight = float(pair[1])
+    def __init__(self, name: str, weight: float):
+        self.name = name
+        self.weight = weight
+
+    def __str__(self):
+        return f'{self.name} {self.weight}'
 
 
 class IWCStep(Enum):
@@ -46,14 +48,21 @@ class IngredientsWeightCalculator(BaseCommandHandler):
                                                        'курица 90\nсыр 30\nсметана 20')
                 self.step = IWCStep.INGREDIENTS
             case IWCStep.INGREDIENTS:
-                result_message = self.calc_client_ingredients(self.message_text)
+                try:
+                    result_message = self._calc_client_ingredients(self.message_text)
+                except ValueError as e:
+                    if str(e) == 'ingredients_parsing_error':
+                        self.bot.send_message(self.chat_id, 'Не смог понять твой список, попробуй еще раз, смотри пример')
+                        return
+                    raise e
+
                 self.bot.send_message(self.chat_id, result_message, 'Markdown')
                 self.step = None
             case _:
                 raise RuntimeError(f'step "{self.step}" isn\'t supported')
 
-    def calc_client_ingredients(self, ingredients_str: str):
-        ingredients = self.parse_ingredients(ingredients_str)
+    def _calc_client_ingredients(self, ingredients_str: str):
+        ingredients = self._parse_ingredients(ingredients_str)
         client_part = self.client_weight / self.all_weight
         all_ingredients_weight = 0
 
@@ -71,9 +80,17 @@ class IngredientsWeightCalculator(BaseCommandHandler):
         return result_message
 
     @staticmethod
-    def parse_ingredients(ingredients_str: str):
+    def _parse_ingredients(ingredients_str: str) -> list[Ingredient]:
         ingredients = []
         for ingredient_str in ingredients_str.split('\n'):
-            ingredients.append(Ingredient(ingredient_str))
+            ingredient_str = ingredient_str.strip()
+            if not ingredient_str:
+                continue
+
+            pair = ingredient_str.split(' ')
+            if len(pair) != 2:
+                raise ValueError('ingredients_parsing_error')
+
+            ingredients.append(Ingredient(pair[0], float(pair[1])))
 
         return ingredients
