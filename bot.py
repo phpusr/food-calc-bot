@@ -12,6 +12,8 @@ class FoodCalcBotCommand(enum.Enum):
 
 
 class FoodCalcBot(BaseBot):
+    name = 'Помощник при расчете еды'
+    description = ''
 
     def add_command_handlers(self):
         self.add_command_handler(

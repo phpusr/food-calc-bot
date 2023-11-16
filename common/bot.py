@@ -28,6 +28,8 @@ class BotCommandType(enum.Enum):
 
 class BaseBot:
     debug = False
+    name: str
+    description: str
     context_data: dict[int, BaseCommandHandler]
     commands: list[BotCommand]
 
@@ -42,9 +44,14 @@ class BaseBot:
             description='Начать пользоваться ботом'
         )
         self.add_command_handlers()
-        self.bot.set_my_commands(self.commands)
         self.add_callback_query_handler(lambda call: True, self._callback_query)
         self.add_message_handler(self._text_messages_handler, content_types=['text'])
+
+        if self.name:
+            self.bot.set_my_name(self.name)
+        if self.description:
+            self.bot.set_my_description(self.description)
+        self.bot.set_my_commands(self.commands)
 
     def start(self):
         self.bot.polling(none_stop=True, interval=0)
