@@ -41,7 +41,7 @@ class BaseBot:
         print('message:', message_text)
         context = self.context_data.get(message.chat.id)
 
-        if not context:
+        if not context or not context.step:
             self.bot.send_message(message.chat.id, 'Я не понял, выбери команду из списка')
             return
 

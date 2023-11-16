@@ -20,11 +20,10 @@ class IWCStep(Enum):
     CLIENT_FOOD_WEIGHT = 2
     REST_FOOD_WEIGHT = 3
     INGREDIENTS = 4
-    DONE = 5
 
 
 class IngredientsWeightCalculator(BaseCommandHandler):
-    step: IWCStep
+    step: IWCStep | None
     all_weight: float
     client_weight: float
 
@@ -32,26 +31,26 @@ class IngredientsWeightCalculator(BaseCommandHandler):
         super().__init__(bot)
         self.step = IWCStep.START
 
-    def next(self, message):
+    def _next(self):
         match self.step:
             case IWCStep.START:
-                self.bot.send_message(message.chat.id, 'Пупсик, введи массу своей доли, приготовленной еды')
+                self.bot.send_message(self.chat_id, 'Пупсик, введи массу своей доли, приготовленной еды')
                 self.step = IWCStep.CLIENT_FOOD_WEIGHT
             case IWCStep.CLIENT_FOOD_WEIGHT:
-                self.client_weight = float(message.text)
-                self.bot.send_message(message.chat.id, 'Пупсик, введи массу оставшейся части, приготовленной еды')
+                self.client_weight = float(self.message_text)
+                self.bot.send_message(self.chat_id, 'Пупсик, введи массу оставшейся части, приготовленной еды')
                 self.step = IWCStep.REST_FOOD_WEIGHT
             case IWCStep.REST_FOOD_WEIGHT:
-                self.all_weight = self.client_weight + float(message.text)
-                self.bot.send_message(message.chat.id, 'Пупсик, введи ингредиенты и их массу\n\nПример:\n\n'
+                self.all_weight = self.client_weight + float(self.message_text)
+                self.bot.send_message(self.chat_id, 'Пупсик, введи ингредиенты и их массу\n\nПример:\n\n'
                                                        'курица 90\nсыр 30\nсметана 20')
                 self.step = IWCStep.INGREDIENTS
             case IWCStep.INGREDIENTS:
-                result_message = self.calc_client_ingredients(message.text)
-                self.bot.send_message(message.chat.id, result_message, 'Markdown')
-                self.step = IWCStep.DONE
+                result_message = self.calc_client_ingredients(self.message_text)
+                self.bot.send_message(self.chat_id, result_message, 'Markdown')
+                self.step = None
             case _:
-                self.bot.send_message(message.chat.id, 'Wrong')
+                raise RuntimeError(f'step "{self.step}" isn\'t supported')
 
     def calc_client_ingredients(self, ingredients_str: str):
         ingredients = self.parse_ingredients(ingredients_str)
@@ -71,7 +70,8 @@ class IngredientsWeightCalculator(BaseCommandHandler):
 
         return result_message
 
-    def parse_ingredients(self, ingredients_str: str):
+    @staticmethod
+    def parse_ingredients(ingredients_str: str):
         ingredients = []
         for ingredient_str in ingredients_str.split('\n'):
             ingredients.append(Ingredient(ingredient_str))

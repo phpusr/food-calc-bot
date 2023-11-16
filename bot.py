@@ -9,9 +9,6 @@ class FoodCalcBot(BaseBot):
     def _add_command_handlers(self):
         self._add_command_handler(self.calc_ingredients_weight_command, ['calc_ingredients_weight'])
 
-    def start(self):
-        self.bot.polling(none_stop=True, interval=0)
-
     def _start_command(self, message):
         markup = types.InlineKeyboardMarkup()
         start_calc_food = types.InlineKeyboardButton('Начать расчет', callback_data='calc_ingredients_weight')
