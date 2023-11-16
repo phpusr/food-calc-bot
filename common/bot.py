@@ -7,12 +7,13 @@ from telebot import TeleBot, ExceptionHandler
 from telebot.types import InlineKeyboardButton, BotCommand
 
 from common.command_handler import BaseCommandHandler
+from i18n import messages
 
 
 class CommandInlineKeyboardMarkup(InlineKeyboardButton):
     def __init__(self, title: str, command_name: str):
         callback_data = json.dumps({'command': command_name})
-        super().__init__('Начать расчет', callback_data=callback_data)
+        super().__init__(title, callback_data=callback_data)
 
 
 class CustomExceptionHandler(ExceptionHandler):
@@ -28,6 +29,7 @@ class BotCommandType(enum.Enum):
 
 class BaseBot:
     debug = False
+    change_name: bool
     name: str
     description: str
     context_data: dict[int, BaseCommandHandler]
@@ -41,15 +43,15 @@ class BaseBot:
         self.add_command_handler(
             handler=self.start_command,
             commands=[BotCommandType.START.value],
-            description='Начать пользоваться ботом'
+            description=messages.command_start_description
         )
         self.add_command_handlers()
         self.add_callback_query_handler(lambda call: True, self._callback_query)
         self.add_message_handler(self._text_messages_handler, content_types=['text'])
 
-        if self.name:
+        if self.change_name and self.name:
             self.bot.set_my_name(self.name)
-        if self.description:
+        if self.change_name and self.description:
             self.bot.set_my_description(self.description)
         self.bot.set_my_commands(self.commands)
 
@@ -63,7 +65,7 @@ class BaseBot:
         self.print_help(message)
 
     def print_help(self, message):
-        self.bot.send_message(message.from_user.id, 'Implement me')
+        self.bot.send_message(message.from_user.id, messages.implement_me)
 
     def _callback_query(self, call):
         data = json.loads(call.data)
@@ -87,7 +89,7 @@ class BaseBot:
             context.next(message)
         except ValueError as e:
             if str(e).startswith('could not convert string to float'):
-                self.bot.send_message(message.chat.id, 'Не могу преобразовать введенное в число')
+                self.bot.send_message(message.chat.id, messages.error_float_convert)
                 return
             print(e)
 
@@ -101,9 +103,9 @@ class BaseBot:
                             **kwargs):
 
         if content_types is None:
-            content_types = ["text"]
+            content_types = ['text']
 
-        method_name = "message_handler"
+        method_name = 'message_handler'
 
         if commands is not None:
             self.bot.check_commands_input(commands, method_name)
@@ -114,7 +116,7 @@ class BaseBot:
             self.bot.check_regexp_input(regexp, method_name)
 
         if isinstance(content_types, str):
-            print("message_handler: 'content_types' filter should be List of strings (content types), not string.")
+            print('message_handler: "content_types" filter should be List of strings (content types), not string.')
             content_types = [content_types]
 
         for command in commands:
@@ -146,9 +148,9 @@ class BaseBot:
                     **kwargs):
 
         if content_types is None:
-            content_types = ["text"]
+            content_types = ['text']
 
-        method_name = "message_handler"
+        method_name = 'message_handler'
 
         if commands is not None:
             self.bot.check_commands_input(commands, method_name)
