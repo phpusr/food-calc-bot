@@ -1,0 +1,10 @@
+/.idea/
+/other/
+/tests/
+
+/.dockerignore
+/.env
+/.gitignore
+/Dockerfile
+/docker-compose.yml
+/Pipfile

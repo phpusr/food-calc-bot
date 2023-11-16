@@ -1,0 +1,11 @@
+version: "3.5"
+
+services:
+  bot:
+    container_name: food-calc-bot
+    build: .
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_CHANGE_NAME=${BOT_CHANGE_NAME}
+      - BOT_ALLOWED_USERS=${BOT_ALLOWED_USERS}
