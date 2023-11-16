@@ -2,7 +2,7 @@ food-calc-bot
 =============
 
 The bot calculates the mass of ingredients in your portion of food. 
-To do this, you need to enter the weight of your portion of food, the rest of the food and the weight of each ingredient.
+To do this, you need to enter the mass of your portion of food, the rest of the food and the mass of each ingredient.
 
 ### RU
 

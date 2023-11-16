@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from commands.ingredients_weight_calculator import IngredientsWeightCalculator
+from commands.ingredients_mass_calculator import IngredientsMassCalculator
 from common.command_handler import BaseCommandHandler
 
 
@@ -20,6 +20,6 @@ class TestParser(TestCase):
 
     def _test_parse_ingredients(self, ingredients_str: str, result_str: str):
         ingredients_str = BaseCommandHandler._handle_message_text(ingredients_str)
-        ingredient_list = [str(ingredient) for ingredient in IngredientsWeightCalculator._parse_ingredients(ingredients_str)]
+        ingredient_list = [str(ingredient) for ingredient in IngredientsMassCalculator._parse_ingredients(ingredients_str)]
         ingredients = ','.join(ingredient_list)
         self.assertEqual(ingredients, result_str)

@@ -8,28 +8,28 @@ from i18n import messages
 @dataclass
 class Ingredient:
     name: str
-    weight: float
+    mass: float
 
-    def __init__(self, name: str, weight: float):
+    def __init__(self, name: str, mass: float):
         self.name = name
-        self.weight = weight
+        self.mass = mass
 
     def __str__(self):
-        return f'{self.name} {self.weight}'
+        return f'{self.name} {self.mass}'
 
 
 @enum.unique
 class IWCStep(enum.Enum):
     START = 1
-    CLIENT_FOOD_WEIGHT = 2
-    REST_FOOD_WEIGHT = 3
+    CLIENT_FOOD_MASS = 2
+    REST_FOOD_MASS = 3
     INGREDIENTS = 4
 
 
-class IngredientsWeightCalculator(BaseCommandHandler):
+class IngredientsMassCalculator(BaseCommandHandler):
     step: IWCStep | None
-    all_weight: float
-    client_weight: float
+    all_food_mass: float
+    client_food_mass: float
 
     def __init__(self, bot):
         super().__init__(bot)
@@ -38,14 +38,14 @@ class IngredientsWeightCalculator(BaseCommandHandler):
     def _next(self):
         match self.step:
             case IWCStep.START:
-                self.bot.send_message(self.chat_id, messages.iwc_enter_your_food_weight)
-                self.step = IWCStep.CLIENT_FOOD_WEIGHT
-            case IWCStep.CLIENT_FOOD_WEIGHT:
-                self.client_weight = float(self.message_text)
-                self.bot.send_message(self.chat_id, messages.iwc_enter_rest_food_weight)
-                self.step = IWCStep.REST_FOOD_WEIGHT
-            case IWCStep.REST_FOOD_WEIGHT:
-                self.all_weight = self.client_weight + float(self.message_text)
+                self.bot.send_message(self.chat_id, messages.iwc_enter_your_food_mass)
+                self.step = IWCStep.CLIENT_FOOD_MASS
+            case IWCStep.CLIENT_FOOD_MASS:
+                self.client_food_mass = float(self.message_text)
+                self.bot.send_message(self.chat_id, messages.iwc_enter_rest_food_mass)
+                self.step = IWCStep.REST_FOOD_MASS
+            case IWCStep.REST_FOOD_MASS:
+                self.all_food_mass = self.client_food_mass + float(self.message_text)
                 self.bot.send_message(self.chat_id, messages.iwc_enter_ingredients, 'Markdown')
                 self.step = IWCStep.INGREDIENTS
             case IWCStep.INGREDIENTS:
@@ -64,19 +64,21 @@ class IngredientsWeightCalculator(BaseCommandHandler):
 
     def _calc_client_ingredients(self, ingredients_str: str):
         ingredients = self._parse_ingredients(ingredients_str)
-        client_part = self.client_weight / self.all_weight
-        all_ingredients_weight = 0
+        result_message = ''
 
-        result_message = messages.iwc_client_part.format(client_part=client_part * 100)
+        # Show warning if ingredients mass is much larger than food mass
+        all_ingredients_mass = sum([ing.mass for ing in ingredients])
+        diff_mass = round(all_ingredients_mass - self.all_food_mass)
+        if diff_mass > 20:
+            result_message += messages.iwc_warn_ingredients_mass.format(
+                ingredients_mass=round(all_ingredients_mass), diff_mass=diff_mass)
+
+        # Show list ingredients with mass
+        client_part = self.client_food_mass / self.all_food_mass
+        result_message += messages.iwc_client_part.format(client_part=client_part * 100)
         for ingredient in ingredients:
-            all_ingredients_weight += ingredient.weight
-            diff_weight = round(all_ingredients_weight - self.all_weight)
-            if diff_weight > 20:
-                result_message += messages.iwc_warn_ingredients_weight.format(
-                    ingredients_weight=round(all_ingredients_weight), diff_weight=diff_weight)
-
-            client_ingredient_weight = ingredient.weight * client_part
-            result_message += f'- {ingredient.name}: {client_ingredient_weight:.1f} г\n'
+            client_ingredient_mass = ingredient.mass * client_part
+            result_message += f'- {ingredient.name}: {client_ingredient_mass:.1f} г\n'
 
         result_message += messages.iwc_good_bye
 
