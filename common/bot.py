@@ -34,11 +34,13 @@ class BaseBot:
     description: str
     context_data: dict[int, BaseCommandHandler]
     commands: list[BotCommand]
+    allowed_users: list[str]
 
     def __init__(self):
         self.bot = TeleBot(os.getenv('BOT_TOKEN'), exception_handler=CustomExceptionHandler())
         self.context_data = {}
         self.commands = []
+        self.allowed_users = os.getenv('BOT_ALLOWED_USERS', '').split(',')
 
         self.add_command_handler(
             handler=self.start_command,
@@ -79,19 +81,28 @@ class BaseBot:
         if self.debug:
             print('message:', message.text)
 
-        context = self.context_data.get(message.chat.id)
-
-        if not context or not context.step:
-            self.print_help(message)
+        allowed = self.check_access_to_command(message)
+        if not allowed:
+            # If user wrote right answer then add him to allowed users
+            if message.text.lower() == messages.i_am_sweeties:
+                self.allowed_users.append(message.from_user.username)
+                self.print_help(message)
+            else:
+                self.bot.send_message(message.chat.id, messages.access_denied)
             return
 
-        try:
-            context.next(message)
-        except ValueError as e:
-            if str(e).startswith('could not convert string to float'):
-                self.bot.send_message(message.chat.id, messages.error_float_convert)
-                return
-            print(e)
+        context = self.context_data.get(message.chat.id)
+        if context and context.step:
+            try:
+                context.next(message)
+            except ValueError as e:
+                if str(e).startswith('could not convert string to float'):
+                    self.bot.send_message(message.chat.id, messages.error_float_convert)
+                    return
+                raise e
+            return
+
+        self.print_help(message)
 
     def add_command_handler(self, handler,
                             commands: list[str] = None,
@@ -128,7 +139,7 @@ class BaseBot:
                                                     content_types=content_types,
                                                     commands=commands,
                                                     regexp=regexp,
-                                                    func=func,
+                                                    func=self.check_access_to_command,
                                                     **kwargs)
         self.bot.add_message_handler(handler_dict)
 
@@ -173,3 +184,6 @@ class BaseBot:
                                                     func=func,
                                                     **kwargs)
         self.bot.add_message_handler(handler_dict)
+
+    def check_access_to_command(self, message):
+        return message.from_user.username in self.allowed_users
