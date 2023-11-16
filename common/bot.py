@@ -32,16 +32,16 @@ class BaseBot:
     change_name: bool
     name: str
     description: str
+    allowed_users: list[str]
     context_data: dict[int, BaseCommandHandler]
     commands: list[BotCommand]
-    allowed_users: list[str]
 
     def __init__(self):
         self.change_name = os.getenv('BOT_CHANGE_NAME') == 'TRUE'
         self.bot = TeleBot(os.getenv('BOT_TOKEN'), exception_handler=CustomExceptionHandler())
+        self.allowed_users = os.getenv('BOT_ALLOWED_USERS', '').split(',')
         self.context_data = {}
         self.commands = []
-        self.allowed_users = os.getenv('BOT_ALLOWED_USERS', '').split(',')
 
         self.add_command_handler(
             handler=self.start_command,
